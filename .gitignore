@@ -1,0 +1,3 @@
+# Ignorar archivos compilados
+*.o
+*.bin
