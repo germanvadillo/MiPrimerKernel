@@ -1,5 +1,5 @@
 void kernel_main(void){
-    //la memoria de video empieza en 0xB8000, puntero a la direccion
+    //la memoria de video empieza en 0xB8000, puntero a la direccion (VGA)
     unsigned short* video_memory = (unsigned short*)0xB8000;
 
     const char* str = "Hola mundo desde mi kernel";
