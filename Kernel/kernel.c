@@ -14,7 +14,7 @@ static const size_t VGA_HEIGHT = 25;
 size_t terminal_row;
 size_t terminal_column;
 uint8_t terminal_color;
-uint16_t* terminal_buffer;
+volatile uint16_t* terminal_buffer;
 
 
 uint8_t crear_color(enum vga_color texto, enum vga_color fondo) {
@@ -50,6 +50,23 @@ void terminal_borrar(void){
     }
 }
 
+void terminal_scrolling(void){
+    for (size_t y = 1; y < VGA_HEIGHT; y++){
+        for (size_t x = 0;x < VGA_WIDTH; x++){
+            const size_t index_actual = y * VGA_WIDTH + x;
+            const size_t index_arriba = (y - 1) * VGA_WIDTH + x;
+
+            terminal_buffer[index_arriba] = terminal_buffer[index_actual];
+        }
+    }
+
+    for (size_t x = 0; x < VGA_WIDTH; x++){
+        const size_t index_ultima_linea = (VGA_HEIGHT -1) * VGA_WIDTH + x;
+        terminal_buffer[index_ultima_linea] = crear_caracter_vga(' ', terminal_color);
+    }
+    terminal_row = VGA_HEIGHT - 1;
+}
+
 void terminal_escribir(const char* texto){
     size_t i = 0;
     while (texto[i] != '\0'){
@@ -65,6 +82,10 @@ void terminal_escribir(const char* texto){
             terminal_row++;
         }
     }
+
+    if (terminal_row == VGA_HEIGHT){
+        terminal_scrolling();
+    }
         i++;
     }
 }
@@ -78,10 +99,22 @@ void wait(uint32_t ciclos){
 void kernel_main(void){
 
     terminal_iniciar();
-    for (uint32_t i = 0; i < 10; i++){
-        terminal_escribir("pablo no sabe jugar al overwatch \n");
+    for (uint32_t i = 0; i < 50; i++){
+        terminal_escribir("mensaje de prueba 44444444444444444444444 \n");
         wait(1800000000);
-        terminal_escribir("jorge no sabe atacar en el clash of clans \n");
+        terminal_escribir("mensaje de prueba 33333333333333333333333 \n");
+        wait(1800000000);
+        terminal_escribir("mensaje de prueba 55555555555555555555555 \n");
+        wait(1800000000);
+        terminal_escribir("mensaje de prueba 99999999999999999999999 \n");
+        wait(1800000000);
+        terminal_escribir("mensaje de prueba 77777777777777777777777 \n");
+        wait(1800000000);
+        terminal_escribir("mensaje de prueba 66666666666666666666666 \n");
+        wait(1800000000);
+        terminal_escribir("mensaje de prueba 22222222222222222222222 \n");
+        wait(1800000000);
+        terminal_escribir("mensaje de prueba 00000000000000000000000 \n");
         wait(1800000000);
     }
 }
