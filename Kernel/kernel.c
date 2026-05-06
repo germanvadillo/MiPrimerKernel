@@ -50,6 +50,36 @@ void terminal_borrar(void){
     }
 }
 
+void terminal_escribir_entero(int numero) {
+    char buffer[12];
+    char bufferev[12];
+    int i = 0;
+    bool es_negativo = false;
+    if (numero == 0){
+        terminal_escribir("0");
+        return;
+    }
+
+    if (numero < 0){
+        es_negativo = true;
+        numero = -numero;
+    }
+
+    while (numero > 0){
+        int digito = numero % 10;
+        buffer[i] = digito + '0';
+        i++;
+        numero = numero / 10;
+    }
+
+    if (es_negativo){
+        buffer[i] = '-'
+        i++
+    }
+
+    
+}
+
 void terminal_scrolling(void){
     for (size_t y = 1; y < VGA_HEIGHT; y++){
         for (size_t x = 0;x < VGA_WIDTH; x++){
