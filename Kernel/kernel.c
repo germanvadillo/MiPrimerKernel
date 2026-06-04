@@ -50,10 +50,28 @@ void terminal_borrar(void){
     }
 }
 
+void terminal_scrolling(void){
+    for (size_t y = 1; y < VGA_HEIGHT; y++){
+        for (size_t x = 0;x < VGA_WIDTH; x++){
+            const size_t index_actual = y * VGA_WIDTH + x;
+            const size_t index_arriba = (y - 1) * VGA_WIDTH + x;
+
+            terminal_buffer[index_arriba] = terminal_buffer[index_actual];
+        }
+    }
+
+    for (size_t x = 0; x < VGA_WIDTH; x++){
+        const size_t index_ultima_linea = (VGA_HEIGHT -1) * VGA_WIDTH + x;
+        terminal_buffer[index_ultima_linea] = crear_caracter_vga(' ', terminal_color);
+    }
+    terminal_row = VGA_HEIGHT - 1;
+}
+
 void terminal_escribir_entero(int numero) {
     char buffer[12];
-    char bufferev[12];
     int i = 0;
+    char bufferev[12];
+    int j = 0;
     bool es_negativo = false;
     if (numero == 0){
         terminal_escribir("0");
@@ -73,28 +91,60 @@ void terminal_escribir_entero(int numero) {
     }
 
     if (es_negativo){
-        buffer[i] = '-'
-        i++
+        buffer[i] = '-';
+        i++;
     }
 
-    
+    while(i > 0){
+        i--;
+        bufferev[j] = buffer[i];
+        j++;
+    }
+
+    bufferev[j] = '\0';
+    terminal_escribir(bufferev);
+
 }
 
-void terminal_scrolling(void){
-    for (size_t y = 1; y < VGA_HEIGHT; y++){
-        for (size_t x = 0;x < VGA_WIDTH; x++){
-            const size_t index_actual = y * VGA_WIDTH + x;
-            const size_t index_arriba = (y - 1) * VGA_WIDTH + x;
+struct gdt_entry{
+    uint16_t limit_low;
+    uint16_t base_low;
+    uint8_t base_middle;
+    uint8_t access;
+    uint8_t granularity;
+    uint8_t base_high;
+} __attribute__((packed));
 
-            terminal_buffer[index_arriba] = terminal_buffer[index_actual];
-        }
-    }
+struct gdt_ptr{
+    uint16_t limit;
+    uint32_t base;
+} __attribute__((packed));
 
-    for (size_t x = 0; x < VGA_WIDTH; x++){
-        const size_t index_ultima_linea = (VGA_HEIGHT -1) * VGA_WIDTH + x;
-        terminal_buffer[index_ultima_linea] = crear_caracter_vga(' ', terminal_color);
-    }
-    terminal_row = VGA_HEIGHT - 1;
+struct gdt_entry gdt[3];
+struct gdt_ptr gp;
+
+void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran){
+    gdt[num].base_low = (base & 0xFFFF);
+    gdt[num].base_middle = (base >> 16) & 0xFF;
+    gdt[num].base_high = (base >> 24) & 0xFF;
+
+    gdt[num].limit_low = (limit & 0xFFFF);
+    gdt[num].granularity = ((limit >> 16) & 0x0F);
+
+    gdt[num].granularity |= (gran & 0xF0);
+    gdt[num].access = access;
+}
+
+extern void gdt_flush(uint32_t);
+
+void gdt_install(){
+    gp.limit = (sizeof(struct gdt_entry) * 3) - 1;
+    gp.base = (uint32_t)&gdt;
+    gdt_set_gate(0, 0, 0, 0, 0);
+    gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
+    gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
+
+    gdt_flush((uint32_t)&gp);
 }
 
 void terminal_escribir(const char* texto){
@@ -127,24 +177,8 @@ void wait(uint32_t ciclos){
 }
 
 void kernel_main(void){
-
     terminal_iniciar();
-    for (uint32_t i = 0; i < 50; i++){
-        terminal_escribir("mensaje de prueba 44444444444444444444444 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 33333333333333333333333 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 55555555555555555555555 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 99999999999999999999999 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 77777777777777777777777 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 66666666666666666666666 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 22222222222222222222222 \n");
-        wait(1800000000);
-        terminal_escribir("mensaje de prueba 00000000000000000000000 \n");
-        wait(1800000000);
-    }
+    gdt_install();
+
+    terminal_escribir("La GDT se ha instalado correctamente!\n");
 }
